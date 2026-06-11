@@ -1,0 +1,22 @@
+# Sistema operacional
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Editores
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Dados sensíveis (nunca versionar CSVs com dados reais)
+*.csv
+*.txt
+dados/
+data/
+
+# Build / dependências (projeto não usa, mas por precaução)
+node_modules/
+dist/
+.env

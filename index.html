@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1.0">
+  <title>BI Viário SEAT · Natal/RN</title>
+
+  <!-- Fontes -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
+
+  <!-- Leaflet CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+
+  <!-- Estilos do projeto -->
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<!-- LANDING / LOADING -->
+<div id="land">
+  <div class="land-box">
+    <div id="land-logo"></div>
+    <div id="land-inner">
+      <h2>BI Viário SEAT — Natal/RN</h2>
+      <p>Dashboard de Sinistros de Trânsito<br>Setor de Estatística de Sinistro de Trânsito · STTTU</p>
+      <button class="land-btn" onclick="document.getElementById('fi2').click()">Selecionar arquivo CSV</button>
+      <input type="file" id="fi2" accept=".csv,.txt" onchange="loadFile(this.files[0])" style="display:none">
+      <p style="margin-top:12px;font-size:10px;color:var(--border)">Arquivo ISO-8859-1 · separador ponto-e-vírgula</p>
+    </div>
+  </div>
+</div>
+
+<div id="app" style="display:none">
+
+  <!-- SIDEBAR -->
+  <div id="sidebar">
+    <div class="sb-logo"><img id="sb-img" src="" alt="SEAT"></div>
+    <div class="sb-sec">Filtros de Análise</div>
+    <div class="sb-flt"><label>Ano</label><select id="fano" onchange="applyF()"><option value="">Todos</option></select></div>
+    <div class="sb-flt"><label>Mês</label><select id="fmes" onchange="applyF()"><option value="">Todos</option></select></div>
+    <div class="sb-flt"><label>Período do Dia</label><select id="fper" onchange="applyF()"><option value="">Todos</option></select></div>
+    <div class="sb-flt"><label>Bairro</label><select id="fbairro" onchange="applyF()"><option value="">Todos</option></select></div>
+    <div class="sb-flt"><label>Via</label><select id="fvia" onchange="applyF()"><option value="">Todos</option></select></div>
+    <div class="sb-flt"><label>Zona Viária</label><select id="fzona" onchange="applyF()"><option value="">Todos</option></select></div>
+    <div class="sb-flt"><label>Natureza</label><select id="fnat" onchange="applyF()"><option value="">Todos</option></select></div>
+    <div class="sb-flt"><label>Tipo Veículo</label><select id="fveic" onchange="applyF()"><option value="">Todos</option></select></div>
+    <div class="sb-flt"><label>Categoria</label><select id="fcat" onchange="applyF()"><option value="">Todos</option></select></div>
+    <div class="sb-flt"><label>Sexo</label><select id="fsexo" onchange="applyF()"><option value="">Todos</option></select></div>
+    <div class="sb-flt"><label>Estado Físico</label><select id="fef" onchange="applyF()"><option value="">Todos</option></select></div>
+    <div class="chips-wrap" id="chips"></div>
+    <button class="btn-sb" onclick="resetAll()">✕ Limpar filtros</button>
+    <button class="btn-sb btn-upload" onclick="document.getElementById('fi').click()">↑ Trocar CSV</button>
+    <input type="file" id="fi" accept=".csv,.txt" onchange="loadFile(this.files[0])" style="display:none">
+    <div style="height:20px"></div>
+  </div>
+
+  <!-- MAIN -->
+  <div id="main">
+    <div class="topbar">
+      <div class="topbar-brand">
+        <h1>BI Viário Natal/RN — Dashboard de Sinistros</h1>
+        <p>Setor de Estatística de Sinistro de Trânsito · STTTU · 2021–2026</p>
+      </div>
+      <button id="theme-toggle" onclick="toggleTheme()" title="Alternar tema">🌙 Escuro</button>
+      <div id="status">—</div>
+    </div>
+
+    <div class="content">
+
+      <!-- KPIs -->
+      <div class="kpis">
+        <div class="kpi k1"><div class="lbl">Acidentes únicos (BOAT)</div><div class="val" id="k1">—</div><div class="sub">ocorrências registradas</div></div>
+        <div class="kpi k2"><div class="lbl">Envolvidos totais</div><div class="val" id="k2">—</div><div class="sub">pessoas / veículos</div></div>
+        <div class="kpi k3"><div class="lbl">Total de feridos</div><div class="val" id="k3">—</div><div class="sub">estado físico: FERIDO</div></div>
+        <div class="kpi k4"><div class="lbl">Vítimas fatais (óbitos)</div><div class="val" id="k4">—</div><div class="sub">estado físico: ÓBITO</div></div>
+      </div>
+
+      <!-- TEMPORAL -->
+      <div class="sec">Distribuição Temporal</div>
+      <div class="grid2">
+        <div class="card"><h3>Evolução anual de sinistros</h3><p class="hint">🖱 Clique para filtrar por ano</p><div style="position:relative;height:190px"><canvas id="cano"></canvas></div></div>
+        <div class="card"><h3>Distribuição por mês</h3><p class="hint">Sazonalidade mensal (base: BOATs únicos)</p><div style="position:relative;height:190px"><canvas id="cmes"></canvas></div></div>
+      </div>
+      <div class="grid2">
+        <div class="card"><h3>Acidentes por dia da semana</h3><p class="hint">Distribuição semanal</p><div style="position:relative;height:170px"><canvas id="cdia"></canvas></div></div>
+        <div class="card"><h3>Distribuição por hora do dia</h3><p class="hint">Concentração horária das ocorrências</p><div style="position:relative;height:170px"><canvas id="chora"></canvas></div></div>
+      </div>
+      <div class="grid2">
+        <div class="card"><h3>Período do dia</h3><p class="hint">🖱 Clique para filtrar</p><div style="position:relative;height:155px"><canvas id="cper"></canvas></div></div>
+        <div class="card"><h3>Condição de luminosidade</h3><p class="hint">No momento do acidente</p><div style="position:relative;height:155px"><canvas id="clum"></canvas></div></div>
+      </div>
+
+      <!-- LOCALIZAÇÃO -->
+      <div class="sec">Localização e Vias</div>
+      <div class="grid2">
+        <div class="card"><h3>Top 10 bairros com mais acidentes</h3><p class="hint">🖱 Clique para filtrar pelo bairro</p><div style="position:relative;height:290px"><canvas id="cbairro"></canvas></div></div>
+        <div class="card"><h3>Top 10 vias com mais acidentes</h3><p class="hint">🖱 Clique para filtrar pela via</p><div style="position:relative;height:290px"><canvas id="cvia"></canvas></div></div>
+      </div>
+      <div class="grid2">
+        <div class="card"><h3>Distribuição por zona viária</h3><p class="hint">🖱 Clique para filtrar</p><div style="position:relative;height:220px"><canvas id="czona"></canvas></div></div>
+        <div class="card"><h3>Natureza do acidente</h3><p class="hint">🖱 Clique para filtrar</p><div style="position:relative;height:220px"><canvas id="cnat"></canvas></div></div>
+      </div>
+
+      <!-- TIPOLOGIA E PERFIL -->
+      <div class="sec">Tipologia e Perfil dos Envolvidos</div>
+      <div class="grid2">
+        <div class="card"><h3>Tipo de veículo × estado físico</h3><p class="hint">🖱 Clique para filtrar · Ileso / Ferido / Óbito por modal</p><div style="position:relative;height:255px"><canvas id="cveicef"></canvas></div></div>
+        <div class="card"><h3>Top 12 marcas de veículos</h3><p class="hint">🖱 Clique para filtrar por fabricante</p><div style="position:relative;height:255px"><canvas id="cmarca"></canvas></div></div>
+      </div>
+      <div class="grid4">
+        <div class="card"><h3>Sexo dos envolvidos</h3><p class="hint">🖱 Clique para filtrar</p><div style="position:relative;height:195px"><canvas id="csexo"></canvas></div></div>
+        <div class="card"><h3>Faixa etária</h3><p class="hint">🖱 Clique para filtrar</p><div style="position:relative;height:195px"><canvas id="cfaixa"></canvas></div></div>
+        <div class="card"><h3>Categoria do veículo</h3><p class="hint">🖱 Clique para filtrar</p><div style="position:relative;height:195px"><canvas id="ccat"></canvas></div></div>
+        <div class="card"><h3>Estado físico geral</h3><p class="hint">🖱 Clique para filtrar</p><div style="position:relative;height:195px"><canvas id="cef"></canvas></div></div>
+      </div>
+
+      <!-- VIA E AMBIENTE -->
+      <div class="sec">Condições da Via e Ambiente</div>
+      <div class="grid2">
+        <div class="card"><h3>Condição do tempo</h3><div style="position:relative;height:165px"><canvas id="ctempo"></canvas></div></div>
+        <div class="card"><h3>Condição da pista</h3><div style="position:relative;height:165px"><canvas id="cpista"></canvas></div></div>
+      </div>
+      <div class="grid3">
+        <div class="card"><h3>Tipo de pista (material)</h3><div style="position:relative;height:160px"><canvas id="ctpista"></canvas></div></div>
+        <div class="card"><h3>Geometria / Formato da pista</h3><div style="position:relative;height:160px"><canvas id="cfmt"></canvas></div></div>
+        <div class="card"><h3>Tipo de iluminação</h3><div style="position:relative;height:160px"><canvas id="ctlum"></canvas></div></div>
+      </div>
+      <div class="grid2">
+        <div class="card"><h3>Principais tipos de sinalização</h3><p class="hint">Primeiro elemento da sinalização registrada</p><div style="position:relative;height:175px"><canvas id="csinal"></canvas></div></div>
+        <div class="card"><h3>Acidentes × envolvidos por ano</h3><p class="hint">🖱 Clique para filtrar · Acidentes únicos vs total envolvidos</p><div style="position:relative;height:175px"><canvas id="ccomp"></canvas></div></div>
+      </div>
+
+      <!-- MAPAS -->
+      <div class="sec">Mapeamento Geoespacial de Pontos Críticos</div>
+      <div class="grid3" id="maps-grid">
+
+        <!-- MAPA 1: TOTAL -->
+        <div class="map-card" id="mapcard-all">
+          <div class="map-card-header">
+            <h3>🔵 Total Geral de Sinistros</h3>
+            <div class="map-card-controls">
+              <div class="map-mode-btns">
+                <button class="mmbtn active" onclick="setMapMode('all','heat',this)">🌡 Calor</button>
+                <button class="mmbtn" onclick="setMapMode('all','dots',this)">⚬ Pontos</button>
+              </div>
+              <button class="map-fullscreen-btn" onclick="openFullscreen('all')" title="Tela cheia">⛶</button>
+            </div>
+          </div>
+          <div class="map-wrap" id="map-all"></div>
+          <div class="map-footer" id="map-all-count">—</div>
+        </div>
+
+        <!-- MAPA 2: FERIDOS -->
+        <div class="map-card" id="mapcard-ferido">
+          <div class="map-card-header">
+            <h3>🟡 Sinistros com Feridos</h3>
+            <div class="map-card-controls">
+              <div class="map-mode-btns">
+                <button class="mmbtn active" onclick="setMapMode('ferido','heat',this)">🌡 Calor</button>
+                <button class="mmbtn" onclick="setMapMode('ferido','dots',this)">⚬ Pontos</button>
+              </div>
+              <button class="map-fullscreen-btn" onclick="openFullscreen('ferido')" title="Tela cheia">⛶</button>
+            </div>
+          </div>
+          <div class="map-wrap" id="map-ferido"></div>
+          <div class="map-footer" id="map-ferido-count">—</div>
+        </div>
+
+        <!-- MAPA 3: ÓBITOS -->
+        <div class="map-card" id="mapcard-obito">
+          <div class="map-card-header">
+            <h3>🔴 Sinistros com Óbito</h3>
+            <div class="map-card-controls">
+              <div class="map-mode-btns">
+                <button class="mmbtn active" onclick="setMapMode('obito','heat',this)">🌡 Calor</button>
+                <button class="mmbtn" onclick="setMapMode('obito','dots',this)">⚬ Pontos</button>
+              </div>
+              <button class="map-fullscreen-btn" onclick="openFullscreen('obito')" title="Tela cheia">⛶</button>
+            </div>
+          </div>
+          <div class="map-wrap" id="map-obito"></div>
+          <div class="map-footer" id="map-obito-count">—</div>
+        </div>
+
+      </div><!-- /maps-grid -->
+
+      <!-- MODAL FULLSCREEN -->
+      <div id="fs-modal" onclick="closeFullscreen()">
+        <div id="fs-inner" onclick="event.stopPropagation()">
+          <div class="fs-header">
+            <span id="fs-title"></span>
+            <div style="display:flex;gap:8px;align-items:center">
+              <div class="map-mode-btns">
+                <button class="mmbtn active" id="fs-heat-btn" onclick="setFsMode('heat',this)">🌡 Calor</button>
+                <button class="mmbtn" id="fs-dots-btn" onclick="setFsMode('dots',this)">⚬ Pontos</button>
+              </div>
+              <button class="fs-close" onclick="closeFullscreen()">✕</button>
+            </div>
+          </div>
+          <div id="fs-map"></div>
+          <div class="map-footer" id="fs-count">—</div>
+        </div>
+      </div>
+
+    </div><!-- /content -->
+  </div><!-- /main -->
+</div><!-- /app -->
+
+<!-- Bibliotecas externas -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet.heat@0.2.0/dist/leaflet-heat.js"></script>
+
+<!-- Logo (base64 inline) -->
+<script src="assets/logo.js"></script>
+
+<!-- Módulos do projeto (ordem importa) -->
+<script src="js/data.js"></script>
+<script src="js/filters.js"></script>
+<script src="js/charts.js"></script>
+<script src="js/maps.js"></script>
+<script src="js/theme.js"></script>
+
+<!-- Inicialização: injeta logo após todos os scripts carregarem -->
+<script>
+  document.getElementById('land-logo').innerHTML =
+    '<img src="' + LOGO_B64 + '" style="width:130px;border-radius:10px;margin-bottom:18px">';
+  document.getElementById('sb-img').src = LOGO_B64;
+</script>
+
+</body>
+</html>
