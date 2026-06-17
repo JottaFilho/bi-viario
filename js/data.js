@@ -1,9 +1,8 @@
 /* ============================================================
-   data.js — Leitura e parse do CSV (Refatorado)
+   data.js — Versão com todas as variáveis globais restauradas
    ============================================================ */
 
-/* eslint-disable no-unused-vars */
-
+// Variáveis essenciais que estavam faltando no erro (MESES, FAIXAS, etc)
 const MESES  = ['JANEIRO','FEVEREIRO','MARÇO','ABRIL','MAIO','JUNHO',
                 'JULHO','AGOSTO','SETEMBRO','OUTUBRO','NOVEMBRO','DEZEMBRO'];
 const DIAS   = ['SEGUNDA-FEIRA','TERÇA-FEIRA','QUARTA-FEIRA',
@@ -13,78 +12,69 @@ const FAIXAS = ['ATÉ 10 ANOS','11 A 19 ANOS','20 A 29 ANOS','30 A 39 ANOS',
 
 let RAW = [], CH = {}, F = {}, lmap = null, hLayers = {}, curMap = 'all';
 
-/* ── Função Core de Processamento ────────────────────────── */
+async function carregarAutomaticamente() {
+    console.log("Iniciando carregamento...");
+    try {
+        const response = await fetch('base_de_dados_natal.csv');
+        if (!response.ok) throw new Error("Arquivo não encontrado!");
+        
+        const buffer = await response.arrayBuffer();
+        const decoder = new TextDecoder('iso-8859-1');
+        const texto = decoder.decode(buffer);
+        
+        RAW = parseCSV(texto);
+        processarDados(texto);
+    } catch (e) {
+        console.error("Erro no carregamento:", e);
+    }
+}
+
 function processarDados(textoCSV) {
-  RAW = parseCSV(textoCSV);
-  if(RAW.length < 2){ setStatus('Erro: CSV inválido'); return; }
-
-  document.getElementById('land').style.display = 'none';
-  document.getElementById('app').style.display  = 'flex';
-
-  const boats = dedup(RAW).length;
-  setStatus(RAW.length.toLocaleString('pt-BR') + ' reg · ' + boats.toLocaleString('pt-BR') + ' BOATs');
-  
-  populateSels();
-  renderAll();
-  initMap();
-
-  // Força re-render dos mapas após tudo estar visível
-  setTimeout(()=>{ ['all','ferido','obito'].forEach(t=>{ if(MAP_STATE[t].map) MAP_STATE[t].map.invalidateSize(); }); }, 500);
-  setTimeout(()=>{ ['all','ferido','obito'].forEach(t=>{ if(MAP_STATE[t].map) MAP_STATE[t].map.invalidateSize(); }); }, 1200);
+    // Esconde tela de carga
+    const land = document.getElementById('land');
+    const app = document.getElementById('app');
+    if(land) land.style.display = 'none';
+    if(app) app.style.display = 'flex';
+    
+    // Chama as funções do seu projeto
+    if(typeof populateSels === 'function') populateSels();
+    if(typeof renderAll === 'function') renderAll();
+    if(typeof initMap === 'function') initMap();
 }
 
-/* ── Carregamento via Upload (Manual) ────────────────────── */
 function loadFile(f){
-  if(!f) return;
-  setStatus('Carregando...');
-  const r = new FileReader();
-  r.onload = e => processarDados(e.target.result);
-  r.readAsText(f, 'ISO-8859-1');
+    if(!f) return;
+    const r = new FileReader();
+    r.onload = e => {
+        RAW = parseCSV(e.target.result);
+        processarDados(e.target.result);
+    };
+    r.readAsText(f, 'ISO-8859-1');
 }
 
-/* ── Carregamento via URL (Automático) ───────────────────── */
-async function loadFromURL(url) {
-  setStatus('Carregando dados da fonte...');
-  try {
-    const response = await fetch(url);
-    if (!response.ok) throw new Error('Falha ao buscar CSV');
-    const text = await response.text();
-    processarDados(text);
-  } catch (err) {
-    console.error(err);
-    setStatus('Erro ao carregar URL automática');
-  }
+function parseCSV(txt) {
+    if (!txt) return [];
+    const lines = txt.replace(/\r/g,'').split('\n').filter(l=>l.trim());
+    if (lines.length < 2) return [];
+    const sep = lines[0].split(';').length > lines[0].split(',').length ? ';' : ',';
+    const hdrs = splitL(lines[0], sep);
+    return lines.slice(1).map(line => {
+        const v = splitL(line, sep), row = {};
+        hdrs.forEach((h,i) => row[h] = (v[i]||'').trim());
+        return row;
+    });
 }
 
-/* ── Inicialização ───────────────────────────────────────── */
-window.addEventListener('DOMContentLoaded', () => {
-  // Use o caminho relativo direto do repositório
-  const URL_AUTOMATICA = 'https://raw.githubusercontent.com/JottaFilho/bi-viario/main/data/base_de_dados_natal.csv'; 
-  
-  loadFromURL(URL_AUTOMATICA);
-});
-
-/* ── Parser CSV (Mantido) ────────────────────────────────── */
-function parseCSV(txt){
-  const lines = txt.replace(/\r/g,'').split('\n').filter(l=>l.trim());
-  if(!lines.length) return [];
-  const sep = lines[0].split(';').length > lines[0].split(',').length ? ';' : ',';
-  const hdrs = splitL(lines[0], sep);
-  return lines.slice(1).map(line => {
-    const v = splitL(line, sep), row = {};
-    hdrs.forEach((h,i) => row[h] = (v[i]||'').trim());
-    return row;
-  });
+function splitL(line, sep) {
+    const p = []; let cur = '', inQ = false;
+    for(let i = 0; i < line.length; i++){
+        const c = line[i];
+        if(c === '"'){ inQ = !inQ; }
+        else if(c === sep && !inQ){ p.push(cur.replace(/^"|"$/g,'')); cur = ''; }
+        else cur += c;
+    }
+    p.push(cur.replace(/^"|"$/g,''));
+    return p;
 }
 
-function splitL(line, sep){
-  const p = []; let cur = '', inQ = false;
-  for(let i = 0; i < line.length; i++){
-    const c = line[i];
-    if(c === '"'){ inQ = !inQ; }
-    else if(c === sep && !inQ){ p.push(cur.replace(/^"|"$/g,'')); cur = ''; }
-    else cur += c;
-  }
-  p.push(cur.replace(/^"|"$/g,''));
-  return p;
-}
+document.addEventListener('DOMContentLoaded', carregarAutomaticamente);
