@@ -4,6 +4,12 @@
 
 /* eslint-disable no-unused-vars */
 
+/* Registra o plugin de rótulos de dados globalmente (carregado via CDN no index.html) */
+if(typeof Chart !== 'undefined' && typeof ChartDataLabels !== 'undefined'){
+  Chart.register(ChartDataLabels);
+  Chart.defaults.set('plugins.datalabels', { display: true });
+}
+
 /* ── Helpers de cor dinâmica (dark / light) ──────────────── */
 function GR(){ return document.documentElement.classList.contains('light') ? 'rgba(0,0,0,0.06)' : 'rgba(255,255,255,0.04)'; }
 function TX(){ return document.documentElement.classList.contains('light') ? '#1a2e42' : '#c8d8e8'; }
@@ -26,9 +32,18 @@ function bar(labels, data, color, ck, h=false){
       indexAxis: h ? 'y' : 'x',
       responsive: true,
       maintainAspectRatio: false,
+      layout: { padding: h ? {right:28} : {top:18} },
       plugins: {
         legend: { display: false },
-        tooltip: { callbacks: { label: c => ' ' + c.raw.toLocaleString('pt-BR') } }
+        tooltip: { callbacks: { label: c => ' ' + c.raw.toLocaleString('pt-BR') } },
+        datalabels: {
+          color: TX(),
+          font: { size: 9, weight: '600' },
+          anchor: 'end',
+          align: h ? 'right' : 'top',
+          offset: 2,
+          formatter: v => v ? v.toLocaleString('pt-BR') : ''
+        }
       },
       scales: {
         x: { ticks: { color: h ? MU() : TX(), font: {size:10}, autoSkip: false, maxRotation: h ? 0 : 35 }, grid: { color: GR() }, border: { color: 'transparent' } },
@@ -48,7 +63,16 @@ function donut(labels, data, colors, ck){
       responsive: true,
       maintainAspectRatio: false,
       plugins: {
-        legend: { position: 'right', labels: { color: TX(), boxWidth: 10, font: {size:10} } }
+        legend: { position: 'right', labels: { color: TX(), boxWidth: 10, font: {size:10} } },
+        datalabels: {
+          color: '#fff',
+          font: { size: 10, weight: '700' },
+          formatter: (v, ctx) => {
+            const total = ctx.dataset.data.reduce((a,b)=>a+b,0);
+            const pct = total ? (v/total*100) : 0;
+            return pct >= 5 ? pct.toFixed(0)+'%' : '';
+          }
+        }
       },
       onClick: ck ? (e,els) => { if(els.length) setF(ck, labels[els[0].index]); } : undefined
     }
@@ -116,7 +140,14 @@ function renderAll(){
     ]},
     options: {
       responsive:true, maintainAspectRatio:false,
-      plugins: { legend: { labels: { color:TX(), boxWidth:10, font:{size:10} } } },
+      plugins: {
+        legend: { labels: { color:TX(), boxWidth:10, font:{size:10} } },
+        datalabels: {
+          color: '#fff',
+          font: { size: 8, weight: '600' },
+          formatter: v => v > 0 ? v.toLocaleString('pt-BR') : ''
+        }
+      },
       scales: {
         x: { stacked:true, ticks:{ color:TX(), font:{size:9} }, grid:{ color:GR() }, border:{ color:'transparent' } },
         y: { stacked:true, ticks:{ color:MU(), font:{size:10} }, grid:{ color:GR() }, border:{ color:'transparent' } }
@@ -139,7 +170,12 @@ function renderAll(){
             datasets: [{ data: fL.map(f=>fMap[f]||0), backgroundColor:'#06d6b099', hoverBackgroundColor:'#06d6b0', borderRadius:3, borderSkipped:false }] },
     options: {
       responsive:true, maintainAspectRatio:false,
-      plugins: { legend:{display:false}, tooltip:{ callbacks:{ label:c=>' '+c.raw.toLocaleString('pt-BR') } } },
+      layout: { padding: {top:18} },
+      plugins: {
+        legend:{display:false},
+        tooltip:{ callbacks:{ label:c=>' '+c.raw.toLocaleString('pt-BR') } },
+        datalabels: { color: TX(), font:{size:9,weight:'600'}, anchor:'end', align:'top', offset:2, formatter: v => v ? v.toLocaleString('pt-BR') : '' }
+      },
       scales: {
         x: { ticks:{ color:TX(), font:{size:10} }, grid:{ color:GR() }, border:{ color:'transparent' } },
         y: { ticks:{ color:MU(), font:{size:10} }, grid:{ color:GR() }, border:{ color:'transparent' } }
@@ -203,7 +239,11 @@ function renderAll(){
     ]},
     options: {
       responsive:true, maintainAspectRatio:false,
-      plugins: { legend: { labels: { color:TX(), boxWidth:10, font:{size:10} } } },
+      layout: { padding: {top:18} },
+      plugins: {
+        legend: { labels: { color:TX(), boxWidth:10, font:{size:10} } },
+        datalabels: { color: TX(), font:{size:8,weight:'600'}, anchor:'end', align:'top', offset:1, formatter: v => v ? v.toLocaleString('pt-BR') : '' }
+      },
       scales: {
         x: { ticks:{ color:TX(), font:{size:10} }, grid:{ color:GR() }, border:{ color:'transparent' } },
         y: { ticks:{ color:MU(), font:{size:10} }, grid:{ color:GR() }, border:{ color:'transparent' } }

@@ -1,5 +1,5 @@
 /* ============================================================
-   filters.js — Gerenciamento de filtros e helpers
+   filters.js — Gerenciamento de filtros (multi-seleção) e helpers
    ============================================================ */
 
 /* eslint-disable no-unused-vars */
@@ -23,35 +23,45 @@ function countBy(rows, field){
   return Object.entries(m).sort((a,b) => b[1]-a[1]);
 }
 
+/* ── Cada chave de F agora guarda um ARRAY de valores selecionados ─ */
+/* Ex: F.ano = ['2022','2023']  →  registros cujo ANO está em [2022,2023] */
+
+function matchesField(row, field, key){
+  const sel = F[key];
+  if(!sel || !sel.length) return true;
+  const v = col(row, field);
+  return sel.includes(v);
+}
+
 /* ── Filtro principal ────────────────────────────────────── */
 function getF(){
   let d = RAW;
-  if(F.ano)    d = d.filter(r => col(r,'ANO') === F.ano);
-  if(F.mes)    d = d.filter(r => col(r,'MÊS') === F.mes);
-  if(F.per)    d = d.filter(r => col(r,'PERÍODO DO DIA') === F.per);
-  if(F.bairro) d = d.filter(r => col(r,'BAIRRO') === F.bairro);
-  if(F.via)    d = d.filter(r => col(r,'VIA') === F.via);
-  if(F.zona)   d = d.filter(r => col(r,'VIA ZONA') === F.zona);
-  if(F.nat)    d = d.filter(r => col(r,'NATUREZA') === F.nat);
-  if(F.veic)   d = d.filter(r => col(r,'TIPO VEÍCULO') === F.veic);
-  if(F.cat)    d = d.filter(r => col(r,'CATEGORIA') === F.cat);
-  if(F.sexo)   d = d.filter(r => col(r,'SEXO') === F.sexo);
-  if(F.ef)     d = d.filter(r => col(r,'ESTADO FÍSICO') === F.ef);
-  if(F.dia)    d = d.filter(r => col(r,'DIA DA SEMANA') === F.dia);
-  if(F.hora)   d = d.filter(r => (col(r,'HORA ACIDENTE')||'').slice(0,2) === F.hora);
-  if(F.tempo)  d = d.filter(r => col(r,'CONDIÇÃO TEMPO') === F.tempo);
-  if(F.pista)  d = d.filter(r => col(r,'CONDIÇÃO PISTA') === F.pista);
-  if(F.tpista) d = d.filter(r => col(r,'TIPO PISTA') === F.tpista);
-  if(F.fmt)    d = d.filter(r => col(r,'FORMATO PISTA') === F.fmt || col(r,'GEOMETRIA') === F.fmt);
-  if(F.tlum)   d = d.filter(r => col(r,'TIPO ILUMINAÇÃO') === F.tlum || col(r,'TIPO ILUMINACAO') === F.tlum);
-  if(F.sinal)  d = d.filter(r => (col(r,'SINALIZAÇÃO')||col(r,'SINALIZACAO')||'').includes(F.sinal));
-  if(F.lum)    d = d.filter(r => col(r,'CONDIÇÃO LUMINOSIDADE').toUpperCase().trim() === F.lum);
-  if(F.marca)  d = d.filter(r => col(r,'MARCA') === F.marca);
-  if(F.faixa)  d = d.filter(r => col(r,'FAIXA ETÁRIA') === F.faixa);
+  if(F.ano    && F.ano.length)    d = d.filter(r => F.ano.includes(col(r,'ANO')));
+  if(F.mes    && F.mes.length)    d = d.filter(r => F.mes.includes(col(r,'MÊS')));
+  if(F.per    && F.per.length)    d = d.filter(r => F.per.includes(col(r,'PERÍODO DO DIA')));
+  if(F.bairro && F.bairro.length) d = d.filter(r => F.bairro.includes(col(r,'BAIRRO')));
+  if(F.via    && F.via.length)    d = d.filter(r => F.via.includes(col(r,'VIA')));
+  if(F.zona   && F.zona.length)   d = d.filter(r => F.zona.includes(col(r,'VIA ZONA')));
+  if(F.nat    && F.nat.length)    d = d.filter(r => F.nat.includes(col(r,'NATUREZA')));
+  if(F.veic   && F.veic.length)   d = d.filter(r => F.veic.includes(col(r,'TIPO VEÍCULO')));
+  if(F.cat    && F.cat.length)    d = d.filter(r => F.cat.includes(col(r,'CATEGORIA')));
+  if(F.sexo   && F.sexo.length)   d = d.filter(r => F.sexo.includes(col(r,'SEXO')));
+  if(F.ef     && F.ef.length)     d = d.filter(r => F.ef.includes(col(r,'ESTADO FÍSICO')));
+  if(F.dia    && F.dia.length)    d = d.filter(r => F.dia.includes(col(r,'DIA DA SEMANA')));
+  if(F.hora   && F.hora.length)   d = d.filter(r => F.hora.includes((col(r,'HORA ACIDENTE')||'').slice(0,2)));
+  if(F.tempo  && F.tempo.length)  d = d.filter(r => F.tempo.includes(col(r,'CONDIÇÃO TEMPO')));
+  if(F.pista  && F.pista.length)  d = d.filter(r => F.pista.includes(col(r,'CONDIÇÃO PISTA')));
+  if(F.tpista && F.tpista.length) d = d.filter(r => F.tpista.includes(col(r,'TIPO PISTA')));
+  if(F.fmt    && F.fmt.length)    d = d.filter(r => F.fmt.includes(col(r,'FORMATO PISTA')) || F.fmt.includes(col(r,'GEOMETRIA')));
+  if(F.tlum   && F.tlum.length)   d = d.filter(r => F.tlum.includes(col(r,'TIPO ILUMINAÇÃO')) || F.tlum.includes(col(r,'TIPO ILUMINACAO')));
+  if(F.sinal  && F.sinal.length)  d = d.filter(r => F.sinal.some(v => (col(r,'SINALIZAÇÃO')||col(r,'SINALIZACAO')||'').includes(v)));
+  if(F.lum    && F.lum.length)    d = d.filter(r => F.lum.includes(col(r,'CONDIÇÃO LUMINOSIDADE').toUpperCase().trim()));
+  if(F.marca  && F.marca.length)  d = d.filter(r => F.marca.includes(col(r,'MARCA')));
+  if(F.faixa  && F.faixa.length)  d = d.filter(r => F.faixa.includes(col(r,'FAIXA ETÁRIA')));
   return d;
 }
 
-/* ── Mapa de filtros vinculados aos <select> da sidebar ──── */
+/* ── Mapa de filtros vinculados aos dropdowns multi-select da sidebar ── */
 const FMAP = {
   ano:'fano', mes:'fmes', per:'fper', bairro:'fbairro', via:'fvia',
   zona:'fzona', nat:'fnat', veic:'fveic', cat:'fcat', sexo:'fsexo', ef:'fef'
@@ -66,46 +76,49 @@ const FLBL = {
 };
 
 /* ── Ações de filtro ─────────────────────────────────────── */
+
+/* Clique em gráfico/mapa: alterna um único valor dentro do array da chave.
+   Mantém a mesma assinatura setF(chave, valor) usada em charts.js/maps.js. */
 function setF(k, v){
-  if(F[k] === v) delete F[k]; else F[k] = v;
+  if(!F[k]) F[k] = [];
+  const i = F[k].indexOf(v);
+  if(i >= 0) F[k].splice(i,1); else F[k].push(v);
+  if(!F[k].length) delete F[k];
   syncSels(); updChips(); renderAll(); updMap();
 }
 
-function applyF(){
-  F = {};
-  Object.entries(FMAP).forEach(([k,id]) => {
-    const v = document.getElementById(id).value;
-    if(v) F[k] = v;
-  });
+/* Aplica seleção múltipla vinda dos dropdowns customizados da sidebar */
+function applyMultiF(key, values){
+  if(values && values.length) F[key] = values; else delete F[key];
   updChips(); renderAll(); updMap();
 }
 
 function resetAll(){ F = {}; syncSels(); updChips(); renderAll(); updMap(); }
 
+/* Sincroniza o texto exibido em cada dropdown multi-select com o estado atual de F */
 function syncSels(){
-  Object.entries(FMAP).forEach(([k,id]) => document.getElementById(id).value = F[k]||'');
+  Object.entries(FMAP).forEach(([k,id]) => updMultiSelLabel(id, F[k]||[]));
 }
 
 function updChips(){
-  document.getElementById('chips').innerHTML =
-    Object.entries(F).map(([k,v]) =>
-      `<div class="chip" onclick="setF('${k}','${v.replace(/'/g,"\\'")}')">
-        <b>${FLBL[k]}:</b>&nbsp;${v.length>12?v.slice(0,11)+'…':v}&nbsp;✕</div>`
-    ).join('');
+  const chips = [];
+  Object.entries(F).forEach(([k,arr])=>{
+    (arr||[]).forEach(v=>{
+      chips.push(`<div class="chip" onclick="setF('${k}','${v.replace(/'/g,"\\'")}')">
+        <b>${FLBL[k]}:</b>&nbsp;${v.length>12?v.slice(0,11)+'…':v}&nbsp;✕</div>`);
+    });
+  });
+  document.getElementById('chips').innerHTML = chips.join('');
 }
 
-/* ── Popula os <select> da sidebar ───────────────────────── */
+/* ── Popula os dropdowns multi-select da sidebar ─────────── */
 function populateSels(){
   const acc = dedup(RAW);
   function fill(id, field, src, ord){
-    const sel = document.getElementById(id);
     let vals = [...new Set(src.map(r => col(r,field)).filter(Boolean))];
     if(ord) vals = ord.filter(x => vals.includes(x));
     else vals.sort();
-    vals.forEach(v => {
-      const o = document.createElement('option');
-      o.value = v; o.textContent = v; sel.appendChild(o);
-    });
+    buildMultiSel(id, vals);
   }
   fill('fano',    'ANO',           acc);
   fill('fmes',    'MÊS',           acc, MESES);

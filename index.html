@@ -24,9 +24,11 @@
     <div id="land-inner">
       <h2>BI Viário SEAT — Natal/RN</h2>
       <p>Dashboard de Sinistros de Trânsito<br>Setor de Estatística de Sinistro de Trânsito · STTTU</p>
+      <div class="spin" id="land-spinner"></div>
+      <p id="land-status" style="font-size:11px;color:var(--muted);margin-bottom:18px">Conectando à planilha do Google Sheets...</p>
       <button class="land-btn" onclick="document.getElementById('fi2').click()">Selecionar arquivo CSV</button>
       <input type="file" id="fi2" accept=".csv,.txt" onchange="loadFile(this.files[0])" style="display:none">
-      <p style="margin-top:12px;font-size:10px;color:var(--border)">Arquivo ISO-8859-1 · separador ponto-e-vírgula</p>
+      <p style="margin-top:12px;font-size:10px;color:var(--border)">Carregamento automático ou upload manual · ISO-8859-1/UTF-8 · separador ; ou ,</p>
     </div>
   </div>
 </div>
@@ -35,25 +37,32 @@
 
   <!-- SIDEBAR -->
   <div id="sidebar">
+    <button id="sb-collapse-btn" onclick="toggleSidebar()" title="Recolher menu">◂</button>
     <div class="sb-logo"><img id="sb-img" src="" alt="SEAT"></div>
     <div class="sb-sec">Filtros de Análise</div>
-    <div class="sb-flt"><label>Ano</label><select id="fano" onchange="applyF()"><option value="">Todos</option></select></div>
-    <div class="sb-flt"><label>Mês</label><select id="fmes" onchange="applyF()"><option value="">Todos</option></select></div>
-    <div class="sb-flt"><label>Período do Dia</label><select id="fper" onchange="applyF()"><option value="">Todos</option></select></div>
-    <div class="sb-flt"><label>Bairro</label><select id="fbairro" onchange="applyF()"><option value="">Todos</option></select></div>
-    <div class="sb-flt"><label>Via</label><select id="fvia" onchange="applyF()"><option value="">Todos</option></select></div>
-    <div class="sb-flt"><label>Zona Viária</label><select id="fzona" onchange="applyF()"><option value="">Todos</option></select></div>
-    <div class="sb-flt"><label>Natureza</label><select id="fnat" onchange="applyF()"><option value="">Todos</option></select></div>
-    <div class="sb-flt"><label>Tipo Veículo</label><select id="fveic" onchange="applyF()"><option value="">Todos</option></select></div>
-    <div class="sb-flt"><label>Categoria</label><select id="fcat" onchange="applyF()"><option value="">Todos</option></select></div>
-    <div class="sb-flt"><label>Sexo</label><select id="fsexo" onchange="applyF()"><option value="">Todos</option></select></div>
-    <div class="sb-flt"><label>Estado Físico</label><select id="fef" onchange="applyF()"><option value="">Todos</option></select></div>
+    <div class="sb-flt"><label>Ano</label><div class="ms-wrap" id="fano"></div></div>
+    <div class="sb-flt"><label>Mês</label><div class="ms-wrap" id="fmes"></div></div>
+    <div class="sb-flt"><label>Período do Dia</label><div class="ms-wrap" id="fper"></div></div>
+    <div class="sb-flt"><label>Bairro</label><div class="ms-wrap" id="fbairro"></div></div>
+    <div class="sb-flt"><label>Via</label><div class="ms-wrap" id="fvia"></div></div>
+    <div class="sb-flt"><label>Zona Viária</label><div class="ms-wrap" id="fzona"></div></div>
+    <div class="sb-flt"><label>Natureza</label><div class="ms-wrap" id="fnat"></div></div>
+    <div class="sb-flt"><label>Tipo Veículo</label><div class="ms-wrap" id="fveic"></div></div>
+    <div class="sb-flt"><label>Categoria</label><div class="ms-wrap" id="fcat"></div></div>
+    <div class="sb-flt"><label>Sexo</label><div class="ms-wrap" id="fsexo"></div></div>
+    <div class="sb-flt"><label>Estado Físico</label><div class="ms-wrap" id="fef"></div></div>
     <div class="chips-wrap" id="chips"></div>
     <button class="btn-sb" onclick="resetAll()">✕ Limpar filtros</button>
     <button class="btn-sb btn-upload" onclick="document.getElementById('fi').click()">↑ Trocar CSV</button>
+    <button class="btn-sb btn-upload" onclick="reloadFromSheets()">⟳ Recarregar da planilha</button>
     <input type="file" id="fi" accept=".csv,.txt" onchange="loadFile(this.files[0])" style="display:none">
     <div style="height:20px"></div>
   </div>
+
+  <!-- Botão flutuante para reabrir a sidebar quando recolhida (mobile/desktop) -->
+  <button id="sb-expand-btn" onclick="toggleSidebar()" title="Mostrar filtros">☰</button>
+  <!-- Overlay para fechar a sidebar ao tocar fora (mobile) -->
+  <div id="sb-overlay" onclick="toggleSidebar()"></div>
 
   <!-- MAIN -->
   <div id="main">
@@ -70,10 +79,22 @@
 
       <!-- KPIs -->
       <div class="kpis">
-        <div class="kpi k1"><div class="lbl">Acidentes únicos (BOAT)</div><div class="val" id="k1">—</div><div class="sub">ocorrências registradas</div></div>
-        <div class="kpi k2"><div class="lbl">Envolvidos totais</div><div class="val" id="k2">—</div><div class="sub">pessoas / veículos</div></div>
-        <div class="kpi k3"><div class="lbl">Total de feridos</div><div class="val" id="k3">—</div><div class="sub">estado físico: FERIDO</div></div>
-        <div class="kpi k4"><div class="lbl">Vítimas fatais (óbitos)</div><div class="val" id="k4">—</div><div class="sub">estado físico: ÓBITO</div></div>
+        <div class="kpi k1" onclick="toggleKpiDetail('k1')">
+          <div class="lbl">Acidentes únicos (BOAT)</div><div class="val" id="k1">—</div><div class="sub">ocorrências registradas · clique para ver por ano</div>
+          <div class="kpi-detail" id="k1-detail"></div>
+        </div>
+        <div class="kpi k2" onclick="toggleKpiDetail('k2')">
+          <div class="lbl">Envolvidos totais</div><div class="val" id="k2">—</div><div class="sub">pessoas / veículos · clique para ver por ano</div>
+          <div class="kpi-detail" id="k2-detail"></div>
+        </div>
+        <div class="kpi k3" onclick="toggleKpiDetail('k3')">
+          <div class="lbl">Total de feridos</div><div class="val" id="k3">—</div><div class="sub">estado físico: FERIDO · clique para ver por ano</div>
+          <div class="kpi-detail" id="k3-detail"></div>
+        </div>
+        <div class="kpi k4" onclick="toggleKpiDetail('k4')">
+          <div class="lbl">Vítimas fatais (óbitos)</div><div class="val" id="k4">—</div><div class="sub">estado físico: ÓBITO · clique para ver por ano</div>
+          <div class="kpi-detail" id="k4-detail"></div>
+        </div>
       </div>
 
       <!-- TEMPORAL -->
@@ -209,6 +230,7 @@
 
 <!-- Bibliotecas externas -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/chartjs-plugin-datalabels/2.2.0/chartjs-plugin-datalabels.min.js"></script>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://unpkg.com/leaflet.heat@0.2.0/dist/leaflet-heat.js"></script>
 
@@ -218,15 +240,26 @@
 <!-- Módulos do projeto (ordem importa) -->
 <script src="js/data.js"></script>
 <script src="js/filters.js"></script>
+<script src="js/multiselect.js"></script>
 <script src="js/charts.js"></script>
 <script src="js/maps.js"></script>
 <script src="js/theme.js"></script>
+<script src="js/sidebar.js"></script>
+<script src="js/kpi-detail.js"></script>
 
-<!-- Inicialização: injeta logo após todos os scripts carregarem -->
+<!-- Inicialização: injeta logo e dispara carregamento automático -->
 <script>
   document.getElementById('land-logo').innerHTML =
     '<img src="' + LOGO_B64 + '" style="width:130px;border-radius:10px;margin-bottom:18px">';
   document.getElementById('sb-img').src = LOGO_B64;
+
+  // Tenta carregar automaticamente da planilha Google Sheets ao abrir o dashboard.
+  // Se falhar (CORS, offline, planilha não publicada etc.), a tela de upload
+  // manual permanece disponível e a pessoa pode selecionar um CSV local.
+  loadFromSheets().finally(() => {
+    const spinner = document.getElementById('land-spinner');
+    if(spinner) spinner.style.display = 'none';
+  });
 </script>
 
 </body>
