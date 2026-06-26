@@ -105,7 +105,7 @@ async function loadFromSheets(){
     return;
   }
 
-  if(landStatus) landStatus.textContent = 'Conectando à planilha do Google Sheets...';
+  if(landStatus) landStatus.textContent = 'Conectando às nossas bases de dados! Só um instante, por favor...';
 
   try{
     const text = await fetchSheetCSV();
