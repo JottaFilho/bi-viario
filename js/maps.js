@@ -61,7 +61,7 @@ function drawMap(stateObj, coords, cfg, mode){
   if(mode === 'heat'){
     stateObj.heatLayer = L.heatLayer(
       coords.map(([a,b])=>[a,b,1]),
-      { radius:cfg.radius, blur:14, maxZoom:17, gradient:cfg.gradient }
+      { radius:cfg.radius, blur:cfg.blur||16, maxZoom:19, max:1.0, minOpacity:0.2, gradient:cfg.gradient }
     ).addTo(stateObj.map);
   } else {
     const group = L.layerGroup();
