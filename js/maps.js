@@ -22,9 +22,9 @@ const MAP_CFG = {
 
 /* ── URL do tile conforme tema ───────────────────────────── */
 function getTileUrl(){
-  return document.documentElement.classList.contains('light')
-    ? 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png'
-    : 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png';
+  return document.documentElement.classList.contains('dark')
+    ? 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'
+    : 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png';
 }
 
 /* ── Cria (ou retorna) mapa Leaflet ──────────────────────── */
